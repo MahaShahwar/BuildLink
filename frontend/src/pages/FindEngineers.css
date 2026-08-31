@@ -1,0 +1,332 @@
+.find-engineers {
+  min-height: 100vh;
+  background: var(--slate-50);
+  padding: 100px 24px 60px;
+}
+
+.find-engineers__container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.find-engineers__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 28px;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.find-engineers__header h1 {
+  font-size: 28px;
+  color: var(--slate-900);
+}
+
+.find-engineers__header p {
+  color: var(--slate-500);
+  font-size: 14px;
+  margin-top: 2px;
+}
+
+.find-engineers__search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: white;
+  border: 2px solid var(--slate-200);
+  border-radius: var(--radius-full);
+  padding: 10px 18px;
+  width: 360px;
+  max-width: 100%;
+  transition: border-color 0.2s;
+}
+
+.find-engineers__search:focus-within {
+  border-color: var(--primary-400);
+}
+
+.find-engineers__search svg {
+  color: var(--slate-400);
+  flex-shrink: 0;
+}
+
+.find-engineers__search input {
+  border: none;
+  background: none;
+  flex: 1;
+  font-size: 14px;
+  color: var(--slate-800);
+}
+
+.find-engineers__search input::placeholder {
+  color: var(--slate-400);
+}
+
+/* Layout */
+.find-engineers__layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 24px;
+}
+
+/* Filters */
+.find-engineers__filters {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  border: 1px solid var(--slate-200);
+  height: fit-content;
+  position: sticky;
+  top: 96px;
+}
+
+.find-engineers__filters h3 {
+  font-size: 16px;
+  color: var(--slate-800);
+  margin-bottom: 20px;
+}
+
+.filter-group {
+  margin-bottom: 18px;
+}
+
+.filter-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--slate-600);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.filter-group input,
+.filter-group select {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid var(--slate-200);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--slate-800);
+  background: white;
+  transition: border-color 0.2s;
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+  border-color: var(--primary-400);
+}
+
+.filter-reset {
+  width: 100%;
+  padding: 9px;
+  background: var(--slate-100);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--slate-500);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-reset:hover {
+  background: var(--slate-200);
+  color: var(--slate-700);
+}
+
+/* Results */
+.find-engineers__results-header {
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: var(--slate-500);
+  font-weight: 500;
+}
+
+.find-engineers__loading {
+  text-align: center;
+  padding: 60px;
+  color: var(--slate-500);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.find-engineers__empty {
+  text-align: center;
+  padding: 60px 24px;
+  background: white;
+  border-radius: var(--radius-xl);
+  border: 2px dashed var(--slate-200);
+}
+
+.find-engineers__empty-icon { font-size: 48px; margin-bottom: 16px; }
+.find-engineers__empty h3 { font-size: 18px; color: var(--slate-700); margin-bottom: 8px; }
+.find-engineers__empty p { font-size: 14px; color: var(--slate-500); max-width: 400px; margin: 0 auto; line-height: 1.6; }
+
+/* Engineer cards */
+.find-engineers__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.engineer-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  border: 1px solid var(--slate-200);
+  transition: all 0.25s;
+}
+
+.engineer-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary-200);
+}
+
+.engineer-card__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  position: relative;
+}
+
+.engineer-card__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.engineer-card__name {
+  font-size: 15px;
+  color: var(--slate-800);
+}
+
+.engineer-card__spec {
+  font-size: 12px;
+  color: var(--slate-500);
+  margin-top: 1px;
+}
+
+.engineer-card__verified {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 16px;
+}
+
+.engineer-card__stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.engineer-card__stars {
+  color: #f59e0b;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+.engineer-card__rating {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--slate-700);
+  margin-left: 6px;
+}
+
+.engineer-card__exp {
+  font-size: 12px;
+  color: var(--slate-500);
+  font-weight: 500;
+}
+
+.engineer-card__details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--slate-500);
+}
+
+.engineer-card__software {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.engineer-card__sw-tag {
+  padding: 3px 8px;
+  background: var(--slate-100);
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--slate-500);
+}
+
+.engineer-card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.engineer-card__price {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary-700);
+}
+
+.engineer-card__avail {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.engineer-card__btn {
+  width: 100%;
+  padding: 10px;
+  background: var(--slate-50);
+  border: 1.5px solid var(--slate-200);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--slate-600);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.engineer-card__btn:hover {
+  background: var(--primary-50);
+  border-color: var(--primary-300);
+  color: var(--primary-700);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .find-engineers__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .find-engineers__filters {
+    position: static;
+  }
+
+  .find-engineers__search {
+    width: 100%;
+  }
+}
