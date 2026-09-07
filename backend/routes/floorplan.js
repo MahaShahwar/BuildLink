@@ -54,6 +54,17 @@ router.post('/project/:projectId/generate', protect, async (req, res) => {
       generatedAt: new Date(),
     });
     project.activeFloorPlan = result.data;
+
+    // Auto-link floor plan to Milestone 3 (Detailed Architectural Drawings)
+    if (project.milestones?.length >= 3) {
+      const m3 = project.milestones[2]; // index 2 = milestone 3
+      if (!m3.milestoneDeliverables) m3.milestoneDeliverables = [];
+      const fpEntry = `AI Floor Plan v${version}`;
+      if (!m3.milestoneDeliverables.includes(fpEntry)) {
+        m3.milestoneDeliverables.push(fpEntry);
+      }
+    }
+
     await project.save();
 
     res.json({
@@ -94,6 +105,15 @@ router.post('/project/:projectId/amend', protect, async (req, res) => {
       generatedAt: new Date(),
     });
     project.activeFloorPlan = result.data;
+
+    // Auto-link amended floor plan to Milestone 3 (Detailed Architectural Drawings)
+    if (project.milestones?.length >= 3) {
+      const m3 = project.milestones[2];
+      if (!m3.milestoneDeliverables) m3.milestoneDeliverables = [];
+      const fpEntry = `AI Floor Plan v${version} (amended)`;
+      m3.milestoneDeliverables.push(fpEntry);
+    }
+
     await project.save();
 
     res.json({
