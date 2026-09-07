@@ -5,7 +5,7 @@ import { getAvailableProjects, applyToProject } from '../services/api';
 import './BrowseProjects.css';
 
 const BrowseProjects = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -121,11 +121,15 @@ const BrowseProjects = () => {
 
                 <div className="browse-project-card__tags">
                   {project.location?.city && <span className="tag">📍 {project.location.city}</span>}
-                  {project.nlpParsedRequirements?.floors && <span className="tag">🏢 {project.nlpParsedRequirements.floors} floors</span>}
-                  {project.nlpParsedRequirements?.bedrooms && <span className="tag">🛏️ {project.nlpParsedRequirements.bedrooms} beds</span>}
-                  {project.nlpParsedRequirements?.style && <span className="tag">✨ {project.nlpParsedRequirements.style}</span>}
-                  {project.nlpParsedRequirements?.specialFeatures?.map(f => (
-                    <span key={f} className="tag tag--accent">⭐ {f}</span>
+                  {(project.requirements?.floors ?? project.nlpParsedRequirements?.floors) > 0 && <span className="tag">🏢 {project.requirements?.floors ?? project.nlpParsedRequirements?.floors} floors</span>}
+                  {(project.requirements?.rooms ?? project.nlpParsedRequirements?.bedrooms) > 0 && <span className="tag">🛏️ {project.requirements?.rooms ?? project.nlpParsedRequirements?.bedrooms} rooms</span>}
+                  {(project.requirements?.bathrooms ?? project.nlpParsedRequirements?.bathrooms) > 0 && <span className="tag">🚿 {project.requirements?.bathrooms ?? project.nlpParsedRequirements?.bathrooms} baths</span>}
+                  {(project.requirements?.style || project.nlpParsedRequirements?.style) ? <span className="tag">✨ {project.requirements?.style || project.nlpParsedRequirements?.style}</span> : null}
+                  {project.requirements?.features?.map(f => (
+                    <span key={f} className="tag tag--accent">⭐ {f.replace(/_/g, ' ')}</span>
+                  ))}
+                  {project.requirements?.customFeatures?.map((f, i) => (
+                    <span key={`cf-${i}`} className="tag tag--accent">✏️ {f}</span>
                   ))}
                 </div>
 
@@ -145,9 +149,15 @@ const BrowseProjects = () => {
                 </div>
 
                 <div className="browse-project-card__actions">
-                  <button className="browse-project-card__apply-btn" onClick={() => setApplyModal(project)}>
-                    📝 Apply to Project
-                  </button>
+                  {project.applications?.some(a => (a.engineer?._id || a.engineer) === (profile?._id || profile?.id)) ? (
+                    <span className="browse-project-card__applied-badge">
+                      ✅ Applied
+                    </span>
+                  ) : (
+                    <button className="browse-project-card__apply-btn" onClick={() => setApplyModal(project)}>
+                      📝 Apply to Project
+                    </button>
+                  )}
                   <span className="browse-project-card__applicants">
                     {project.applications?.length || 0} applicant{(project.applications?.length || 0) !== 1 ? 's' : ''}
                   </span>

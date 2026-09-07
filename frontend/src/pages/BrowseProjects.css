@@ -29,6 +29,7 @@
 .browse-project-card__actions { display: flex; justify-content: space-between; align-items: center; padding-top: 14px; border-top: 1px solid var(--border-color, #e2e8f0); }
 .browse-project-card__apply-btn { padding: 10px 24px; border-radius: 10px; border: none; background: linear-gradient(135deg, #3b82f6, #06b6d4); color: #fff; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
 .browse-project-card__apply-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(59,130,246,0.3); }
+.browse-project-card__applied-badge { padding: 10px 24px; border-radius: 10px; background: #ecfdf5; color: #059669; font-weight: 600; font-size: 0.9rem; border: 2px solid #a7f3d0; }
 .browse-project-card__applicants { font-size: 0.85rem; color: var(--text-secondary); }
 
 /* Modal */

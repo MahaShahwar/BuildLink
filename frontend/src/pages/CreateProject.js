@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 import { getCostEstimate, createProject } from '../services/api';
+import VoiceToProject from '../components/common/VoiceToProject';
 import './CreateProject.css';
 
 const PROJECT_TYPES = [
@@ -11,14 +12,61 @@ const PROJECT_TYPES = [
   { value: 'industrial', label: 'Industrial', icon: '🏭', desc: 'Factories, warehouses' },
   { value: 'renovation', label: 'Renovation', icon: '🔨', desc: 'Remodel existing structures' },
   { value: 'interior', label: 'Interior Design', icon: '🎨', desc: 'Interior & decoration' },
+  { value: 'other', label: 'Other', icon: '📦', desc: 'Custom project type' },
 ];
+
+const PURPOSES_BY_TYPE = {
+  residential: [
+    { value: 'personal_residence', label: 'Personal Residence' },
+    { value: 'rental', label: 'Rental Property' },
+    { value: 'investment', label: 'Investment / Resale' },
+    { value: 'guest_house', label: 'Guest House' },
+    { value: 'other', label: 'Other' },
+  ],
+  commercial: [
+    { value: 'office_space', label: 'Office Space' },
+    { value: 'retail_shop', label: 'Retail / Shop' },
+    { value: 'restaurant', label: 'Restaurant / Cafe' },
+    { value: 'plaza', label: 'Shopping Plaza / Mall' },
+    { value: 'hotel', label: 'Hotel / Hospitality' },
+    { value: 'other', label: 'Other' },
+  ],
+  industrial: [
+    { value: 'factory', label: 'Factory / Manufacturing' },
+    { value: 'warehouse', label: 'Warehouse / Storage' },
+    { value: 'workshop', label: 'Workshop' },
+    { value: 'cold_storage', label: 'Cold Storage' },
+    { value: 'other', label: 'Other' },
+  ],
+  renovation: [
+    { value: 'home_renovation', label: 'Home Renovation' },
+    { value: 'office_renovation', label: 'Office Renovation' },
+    { value: 'facade_upgrade', label: 'Facade / Exterior Upgrade' },
+    { value: 'structural_repair', label: 'Structural Repair' },
+    { value: 'other', label: 'Other' },
+  ],
+  interior: [
+    { value: 'home_interior', label: 'Home Interior' },
+    { value: 'office_interior', label: 'Office Interior' },
+    { value: 'restaurant_interior', label: 'Restaurant / Cafe Interior' },
+    { value: 'shop_interior', label: 'Shop / Showroom Interior' },
+    { value: 'other', label: 'Other' },
+  ],
+  other: [
+    { value: 'landscaping', label: 'Landscaping' },
+    { value: 'boundary_wall', label: 'Boundary Wall / Fencing' },
+    { value: 'infrastructure', label: 'Infrastructure' },
+    { value: 'consultation', label: 'Consultation Only' },
+    { value: 'other', label: 'Other' },
+  ],
+};
 
 const FEATURES_BY_TYPE = {
   residential: [
     { id: 'basement', label: 'Basement', icon: '🏚️' },
     { id: 'rooftop', label: 'Rooftop Terrace', icon: '🌇' },
-    { id: 'garden', label: 'Garden/Lawn', icon: '🌿' },
-    { id: 'garage', label: 'Garage/Parking', icon: '🚗' },
+    { id: 'garden', label: 'Garden / Lawn', icon: '🌿' },
+    { id: 'garage', label: 'Garage / Parking', icon: '🚗' },
     { id: 'pool', label: 'Swimming Pool', icon: '🏊' },
     { id: 'solar', label: 'Solar Panels', icon: '☀️' },
     { id: 'elevator', label: 'Elevator', icon: '🛗' },
@@ -27,24 +75,57 @@ const FEATURES_BY_TYPE = {
     { id: 'water_tank', label: 'Underground Water Tank', icon: '💧' },
     { id: 'security', label: 'Security Room', icon: '🔒' },
     { id: 'rainwater', label: 'Rainwater Harvesting', icon: '🌧️' },
+    { id: 'central_ac', label: 'Central AC / HVAC', icon: '❄️' },
+    { id: 'backup_power', label: 'Backup Generator / UPS', icon: '⚡' },
+    { id: 'cctv', label: 'CCTV / Smart Security', icon: '📹' },
+    { id: 'smart_home', label: 'Smart Home System', icon: '📱' },
+    { id: 'open_kitchen', label: 'Open Kitchen', icon: '🍳' },
+    { id: 'store_room', label: 'Store Room', icon: '📦' },
+    { id: 'prayer_room', label: 'Prayer Room', icon: '🕌' },
+    { id: 'laundry', label: 'Laundry Area', icon: '🧺' },
+    { id: 'porch', label: 'Car Porch', icon: '🚘' },
+    { id: 'balcony', label: 'Balcony', icon: '🏙️' },
+    { id: 'fireplace', label: 'Fireplace', icon: '🔥' },
+    { id: 'home_theater', label: 'Home Theater', icon: '🎬' },
+    { id: 'gym', label: 'Home Gym', icon: '🏋️' },
   ],
   commercial: [
-    { id: 'elevator', label: 'Elevator', icon: '🛗' },
-    { id: 'parking', label: 'Parking Lot', icon: '🅿️' },
-    { id: 'central_ac', label: 'Central AC', icon: '❄️' },
+    { id: 'elevator', label: 'Elevator / Escalator', icon: '🛗' },
+    { id: 'parking', label: 'Parking Lot / Basement Parking', icon: '🅿️' },
+    { id: 'central_ac', label: 'Central AC / HVAC', icon: '❄️' },
     { id: 'fire_safety', label: 'Fire Safety System', icon: '🧯' },
     { id: 'backup_power', label: 'Backup Generator', icon: '⚡' },
     { id: 'cctv', label: 'CCTV System', icon: '📹' },
-    { id: 'reception', label: 'Reception Area', icon: '🛎️' },
+    { id: 'reception', label: 'Reception / Lobby', icon: '🛎️' },
     { id: 'conference', label: 'Conference Room', icon: '📊' },
+    { id: 'server_room', label: 'Server / IT Room', icon: '🖥️' },
+    { id: 'cafeteria', label: 'Cafeteria / Pantry', icon: '☕' },
+    { id: 'washrooms', label: 'Public Washrooms', icon: '🚻' },
+    { id: 'loading_area', label: 'Loading / Delivery Area', icon: '🚛' },
+    { id: 'signage', label: 'Digital Signage / LED', icon: '📺' },
+    { id: 'solar', label: 'Solar Panels', icon: '☀️' },
+    { id: 'access_control', label: 'Access Control System', icon: '🔐' },
+    { id: 'prayer_area', label: 'Prayer Area', icon: '🕌' },
+    { id: 'atm', label: 'ATM Space', icon: '🏧' },
+    { id: 'open_floor', label: 'Open Floor Plan', icon: '📐' },
   ],
   industrial: [
     { id: 'loading_dock', label: 'Loading Dock', icon: '🚛' },
     { id: 'heavy_power', label: 'Heavy Power Supply', icon: '⚡' },
     { id: 'ventilation', label: 'Industrial Ventilation', icon: '🌀' },
     { id: 'drainage', label: 'Drainage System', icon: '🚰' },
-    { id: 'fire_safety', label: 'Fire Safety', icon: '🧯' },
+    { id: 'fire_safety', label: 'Fire Safety System', icon: '🧯' },
     { id: 'security', label: 'Security System', icon: '🔒' },
+    { id: 'crane', label: 'Overhead Crane', icon: '🏗️' },
+    { id: 'cold_storage', label: 'Cold Storage', icon: '🧊' },
+    { id: 'waste_mgmt', label: 'Waste Management', icon: '♻️' },
+    { id: 'office_block', label: 'Office Block', icon: '🏢' },
+    { id: 'water_treatment', label: 'Water Treatment', icon: '💧' },
+    { id: 'chemical_storage', label: 'Chemical Storage', icon: '🧪' },
+    { id: 'staff_quarters', label: 'Staff Quarters', icon: '🏘️' },
+    { id: 'weighbridge', label: 'Weighbridge', icon: '⚖️' },
+    { id: 'boundary_wall', label: 'Boundary Wall / Fencing', icon: '🧱' },
+    { id: 'parking', label: 'Vehicle Parking', icon: '🅿️' },
   ],
   renovation: [
     { id: 'structural', label: 'Structural Changes', icon: '🏗️' },
@@ -54,25 +135,57 @@ const FEATURES_BY_TYPE = {
     { id: 'painting', label: 'Painting', icon: '🎨' },
     { id: 'kitchen', label: 'Kitchen Remodel', icon: '🍳' },
     { id: 'bathroom', label: 'Bathroom Remodel', icon: '🚿' },
+    { id: 'roof_repair', label: 'Roof Repair / Waterproofing', icon: '🏠' },
+    { id: 'window_doors', label: 'Windows & Doors', icon: '🪟' },
+    { id: 'false_ceiling', label: 'False Ceiling', icon: '✨' },
+    { id: 'ac_upgrade', label: 'AC / HVAC Upgrade', icon: '❄️' },
+    { id: 'insulation', label: 'Thermal Insulation', icon: '🧊' },
+    { id: 'extension', label: 'Room Extension', icon: '📐' },
+    { id: 'demolition', label: 'Partial Demolition', icon: '🔨' },
+    { id: 'exterior', label: 'Exterior / Facade', icon: '🏛️' },
+    { id: 'damp_proofing', label: 'Damp Proofing', icon: '💧' },
   ],
   interior: [
     { id: 'furniture', label: 'Custom Furniture', icon: '🪑' },
     { id: 'lighting', label: 'Lighting Design', icon: '💡' },
     { id: 'false_ceiling', label: 'False Ceiling', icon: '✨' },
     { id: 'flooring', label: 'Flooring', icon: '🪵' },
-    { id: 'kitchen_design', label: 'Kitchen Design', icon: '🍳' },
+    { id: 'kitchen_design', label: 'Modular Kitchen', icon: '🍳' },
     { id: 'curtains', label: 'Curtains & Blinds', icon: '🪟' },
-    { id: 'wallpaper', label: 'Wallpaper/Paneling', icon: '🖼️' },
+    { id: 'wallpaper', label: 'Wallpaper / Wall Paneling', icon: '🖼️' },
+    { id: 'wardrobe', label: 'Built-in Wardrobes', icon: '👔' },
+    { id: 'tv_unit', label: 'TV Unit / Media Wall', icon: '📺' },
+    { id: 'bathroom_design', label: 'Bathroom Design', icon: '🚿' },
+    { id: 'color_scheme', label: 'Color Consultation', icon: '🎨' },
+    { id: 'smart_home', label: 'Smart Home Integration', icon: '📱' },
+    { id: 'partition', label: 'Room Partitions', icon: '🚪' },
+    { id: 'mirror_work', label: 'Mirror / Glass Work', icon: '🪞' },
+    { id: 'staircase', label: 'Staircase Design', icon: '🪜' },
+    { id: 'outdoor_living', label: 'Outdoor Living Space', icon: '🌿' },
+  ],
+  other: [
+    { id: 'landscaping', label: 'Landscaping', icon: '🌿' },
+    { id: 'boundary_wall', label: 'Boundary Wall / Fencing', icon: '🧱' },
+    { id: 'solar', label: 'Solar Installation', icon: '☀️' },
+    { id: 'pool', label: 'Swimming Pool', icon: '🏊' },
+    { id: 'paving', label: 'Paving / Driveway', icon: '🛤️' },
+    { id: 'water_supply', label: 'Water Supply System', icon: '💧' },
+    { id: 'sewerage', label: 'Sewerage / Drainage', icon: '🚰' },
+    { id: 'electrical', label: 'Electrical Work', icon: '🔌' },
+    { id: 'security', label: 'Security System', icon: '🔒' },
+    { id: 'consultation', label: 'Expert Consultation', icon: '📋' },
   ],
 };
 
 const STYLES = [
   { value: 'modern', label: 'Modern', icon: '🏙️' },
   { value: 'traditional', label: 'Traditional', icon: '🕌' },
-  { value: 'minimalist', label: 'Minimalist', icon: '◻️' },
-  { value: 'contemporary', label: 'Contemporary', icon: '🔷' },
+  { value: 'minimalist', label: 'Minimalist', icon: '⬜' },
+  { value: 'contemporary', label: 'Contemporary', icon: '🏗️' },
   { value: 'luxury', label: 'Luxury', icon: '👑' },
   { value: 'colonial', label: 'Colonial', icon: '🏛️' },
+  { value: 'mediterranean', label: 'Mediterranean', icon: '🌊' },
+  { value: 'farmhouse', label: 'Farmhouse', icon: '🏡' },
 ];
 
 const PROFESSIONAL_TYPES = [
@@ -90,11 +203,43 @@ const CreateProject = () => {
   const [loading, setLoading] = useState(false);
   const [aiEstimate, setAiEstimate] = useState(null);
   const [estimating, setEstimating] = useState(false);
+  const [showVoice, setShowVoice] = useState(false);
+
+  const handleVoiceResult = (data) => {
+    setShowVoice(false);
+    setForm(prev => ({
+      ...prev,
+      title: data.title || prev.title,
+      description: data.description || prev.description,
+      projectType: data.projectType || prev.projectType,
+      customProjectType: data.customProjectType || prev.customProjectType,
+      purpose: data.purpose || prev.purpose,
+      location: {
+        city: data.location?.city || prev.location.city,
+        state: data.location?.state || prev.location.state,
+        country: data.location?.country || 'Pakistan',
+      },
+      budgetMin: data.budgetMin || prev.budgetMin,
+      budgetMax: data.budgetMax || prev.budgetMax,
+      floors: data.floors || prev.floors,
+      bedrooms: data.rooms || prev.bedrooms,
+      bathrooms: data.bathrooms || prev.bathrooms,
+      plotSize: data.plotSize || prev.plotSize,
+      plotUnit: data.plotUnit || prev.plotUnit,
+      style: data.style || prev.style,
+      selectedFeatures: data.features?.length ? data.features : prev.selectedFeatures,
+      customFeatures: data.customFeatures?.length ? data.customFeatures : prev.customFeatures,
+      structuralType: data.structuralType || prev.structuralType,
+      timelineWeeks: data.timelineWeeks || prev.timelineWeeks,
+    }));
+    toast.info(`✨ AI confidence: ${Math.round((data.confidence || 0.8) * 100)}% — review and adjust the details below`);
+  };
 
   const [form, setForm] = useState({
     title: '',
     description: '',
     projectType: '',
+    customProjectType: '',
     purpose: '',
     location: { city: '', state: '', country: 'Pakistan' },
     budgetMin: '',
@@ -109,6 +254,8 @@ const CreateProject = () => {
     plotUnit: 'marla',
     style: '',
     selectedFeatures: [],
+    customFeatures: [],
+    customFeatureInput: '',
     structuralType: 'rcc', // rcc, steel, loadbearing
     sustainabilityFeatures: [],
     // Professional preferences
@@ -149,7 +296,7 @@ const CreateProject = () => {
   const totalSteps = 5;
 
   const getAIEstimate = async () => {
-    const desc = `${form.description} ${form.projectType} ${form.floors} floors ${form.bedrooms} bedrooms ${form.bathrooms} bathrooms ${form.plotSize} ${form.plotUnit} ${form.style} style with ${form.selectedFeatures.join(', ')}`;
+    const desc = `${form.description} ${form.projectType} ${form.floors} floors ${form.bedrooms} rooms ${form.bathrooms} bathrooms ${form.plotSize} ${form.plotUnit} ${form.style} style with ${form.selectedFeatures.join(', ')} ${form.customFeatures.join(', ')}`;
     setEstimating(true);
     try {
       const res = await getCostEstimate({ description: desc, city: form.location.city || 'Lahore' });
@@ -168,9 +315,21 @@ const CreateProject = () => {
       const projectData = {
         title: form.title,
         description: form.description,
-        projectType: form.projectType,
+        projectType: form.projectType === 'other' ? (form.customProjectType || 'other') : form.projectType,
         location: { city: form.location.city, state: form.location.state, country: 'Pakistan' },
         budget: { min: form.budgetMin ? parseInt(form.budgetMin) : undefined, max: form.budgetMax ? parseInt(form.budgetMax) : undefined },
+        requirements: {
+          floors: form.floors,
+          rooms: form.bedrooms,
+          bathrooms: form.bathrooms,
+          plotSize: form.plotSize,
+          plotUnit: form.plotUnit,
+          structuralType: form.structuralType,
+          style: form.style,
+          features: form.selectedFeatures,
+          customFeatures: form.customFeatures,
+        },
+        purpose: form.purpose,
         status,
       };
       await createProject(projectData);
@@ -223,6 +382,14 @@ const CreateProject = () => {
         {/* STEP 1: Project Info */}
         {step === 1 && (
           <div className="create-project__section fade-in">
+            <div className="vtp-banner" onClick={() => setShowVoice(true)}>
+              <div className="vtp-banner__icon">🎤</div>
+              <div className="vtp-banner__text">
+                <strong>Describe your project by voice or text</strong>
+                <span>Speak in Urdu or English — AI fills the form for you</span>
+              </div>
+              <div className="vtp-banner__arrow">→</div>
+            </div>
             <h2 className="create-project__section-title"><span>📋</span> Project Details</h2>
 
             <div className="form-group">
@@ -232,7 +399,7 @@ const CreateProject = () => {
                   <div
                     key={t.value}
                     className={`type-card ${form.projectType === t.value ? 'selected' : ''}`}
-                    onClick={() => updateField('projectType', t.value)}
+                    onClick={() => { updateField('projectType', t.value); updateField('purpose', ''); }}
                   >
                     <span className="type-card__icon">{t.icon}</span>
                     <span className="type-card__label">{t.label}</span>
@@ -240,6 +407,13 @@ const CreateProject = () => {
                   </div>
                 ))}
               </div>
+              {form.projectType === 'other' && (
+                <div className="form-group" style={{ marginTop: '12px' }}>
+                  <label>Specify Your Project Type <span className="required">*</span></label>
+                  <input type="text" value={form.customProjectType} onChange={e => updateField('customProjectType', e.target.value)}
+                    placeholder="e.g. Landscaping, Swimming Pool, Solar Installation..." />
+                </div>
+              )}
             </div>
 
             <div className="form-group">
@@ -249,7 +423,7 @@ const CreateProject = () => {
             </div>
 
             <div className="form-group">
-              <label>Describe Your Project <span className="required">*</span></label>
+              <label>Describe Your Project <span style={{ color: '#94a3b8', fontSize: '12px' }}>(optional)</span></label>
               <textarea value={form.description} onChange={e => updateField('description', e.target.value)}
                 placeholder="Describe what you want to build in your own words. Our AI will parse this and generate estimates. e.g. I want to build a modern 2-story house on a 10 marla plot in DHA Phase 6, Lahore. 4 bedrooms, 3 bathrooms, an open kitchen, drawing room, lounge, basement parking, and a rooftop terrace..."
                 rows={5} />
@@ -259,11 +433,9 @@ const CreateProject = () => {
               <label>Purpose</label>
               <select value={form.purpose} onChange={e => updateField('purpose', e.target.value)}>
                 <option value="">Select purpose...</option>
-                <option value="personal_residence">Personal Residence</option>
-                <option value="rental">Rental Property</option>
-                <option value="investment">Investment/Resale</option>
-                <option value="business">Business Use</option>
-                <option value="other">Other</option>
+                {(PURPOSES_BY_TYPE[form.projectType] || PURPOSES_BY_TYPE.other).map(p => (
+                  <option key={p.value} value={p.value}>{p.label}</option>
+                ))}
               </select>
             </div>
 
@@ -285,13 +457,28 @@ const CreateProject = () => {
             <div className="form-row">
               <div className="form-group">
                 <label>Min Budget (PKR)</label>
-                <input type="number" value={form.budgetMin} onChange={e => updateField('budgetMin', e.target.value)}
-                  placeholder="e.g. 5000000" />
+                <input type="number" value={form.budgetMin} onChange={e => {
+                  const val = e.target.value;
+                  updateField('budgetMin', val);
+                  if (val && form.budgetMax && parseInt(val) > parseInt(form.budgetMax)) {
+                    updateField('budgetMax', val);
+                  }
+                }}
+                  placeholder="e.g. 5000000" min="0" />
+                {form.budgetMin && form.budgetMax && parseInt(form.budgetMin) > parseInt(form.budgetMax) && (
+                  <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>Min cannot exceed max budget</span>
+                )}
               </div>
               <div className="form-group">
                 <label>Max Budget (PKR)</label>
-                <input type="number" value={form.budgetMax} onChange={e => updateField('budgetMax', e.target.value)}
-                  placeholder="e.g. 15000000" />
+                <input type="number" value={form.budgetMax} onChange={e => {
+                  const val = e.target.value;
+                  updateField('budgetMax', val);
+                  if (val && form.budgetMin && parseInt(val) < parseInt(form.budgetMin)) {
+                    updateField('budgetMin', val);
+                  }
+                }}
+                  placeholder="e.g. 15000000" min="0" />
               </div>
             </div>
 
@@ -314,58 +501,54 @@ const CreateProject = () => {
           <div className="create-project__section fade-in">
             <h2 className="create-project__section-title"><span>✅</span> Requirements & Features</h2>
 
-            {(form.projectType === 'residential' || form.projectType === 'renovation') && (
-              <>
-                <div className="form-row form-row--3">
-                  <div className="form-group">
-                    <label>Number of Floors</label>
-                    <div className="number-stepper">
-                      <button type="button" onClick={() => updateField('floors', Math.max(1, form.floors - 1))}>−</button>
-                      <span>{form.floors}</span>
-                      <button type="button" onClick={() => updateField('floors', Math.min(10, form.floors + 1))}>+</button>
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <label>Bedrooms</label>
-                    <div className="number-stepper">
-                      <button type="button" onClick={() => updateField('bedrooms', Math.max(1, form.bedrooms - 1))}>−</button>
-                      <span>{form.bedrooms}</span>
-                      <button type="button" onClick={() => updateField('bedrooms', Math.min(20, form.bedrooms + 1))}>+</button>
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <label>Bathrooms</label>
-                    <div className="number-stepper">
-                      <button type="button" onClick={() => updateField('bathrooms', Math.max(1, form.bathrooms - 1))}>−</button>
-                      <span>{form.bathrooms}</span>
-                      <button type="button" onClick={() => updateField('bathrooms', Math.min(20, form.bathrooms + 1))}>+</button>
-                    </div>
-                  </div>
+            <div className="form-row form-row--3">
+              <div className="form-group">
+                <label>Number of Floors</label>
+                <div className="number-stepper">
+                  <button type="button" onClick={() => updateField('floors', Math.max(1, form.floors - 1))}>−</button>
+                  <span>{form.floors}</span>
+                  <button type="button" onClick={() => updateField('floors', Math.min(10, form.floors + 1))}>+</button>
                 </div>
+              </div>
+              <div className="form-group">
+                <label>Rooms</label>
+                <div className="number-stepper">
+                  <button type="button" onClick={() => updateField('bedrooms', Math.max(0, form.bedrooms - 1))}>−</button>
+                  <span>{form.bedrooms}</span>
+                  <button type="button" onClick={() => updateField('bedrooms', Math.min(50, form.bedrooms + 1))}>+</button>
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Bathrooms</label>
+                <div className="number-stepper">
+                  <button type="button" onClick={() => updateField('bathrooms', Math.max(0, form.bathrooms - 1))}>−</button>
+                  <span>{form.bathrooms}</span>
+                  <button type="button" onClick={() => updateField('bathrooms', Math.min(50, form.bathrooms + 1))}>+</button>
+                </div>
+              </div>
+            </div>
 
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Plot Size</label>
-                    <div className="input-with-unit">
-                      <input type="number" value={form.plotSize} onChange={e => updateField('plotSize', e.target.value)} placeholder="e.g. 10" />
-                      <select value={form.plotUnit} onChange={e => updateField('plotUnit', e.target.value)}>
-                        <option value="marla">Marla</option>
-                        <option value="kanal">Kanal</option>
-                        <option value="sqft">Sq. Ft</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <label>Structural Type</label>
-                    <select value={form.structuralType} onChange={e => updateField('structuralType', e.target.value)}>
-                      <option value="rcc">RCC (Reinforced Concrete)</option>
-                      <option value="steel">Steel Structure</option>
-                      <option value="loadbearing">Load Bearing</option>
-                    </select>
-                  </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Plot / Area Size</label>
+                <div className="input-with-unit">
+                  <input type="number" value={form.plotSize} onChange={e => updateField('plotSize', e.target.value)} placeholder="e.g. 10" />
+                  <select value={form.plotUnit} onChange={e => updateField('plotUnit', e.target.value)}>
+                    <option value="marla">Marla</option>
+                    <option value="kanal">Kanal</option>
+                    <option value="sqft">Sq. Ft</option>
+                  </select>
                 </div>
-              </>
-            )}
+              </div>
+              <div className="form-group">
+                <label>Structural Type</label>
+                <select value={form.structuralType} onChange={e => updateField('structuralType', e.target.value)}>
+                  <option value="rcc">RCC (Reinforced Concrete)</option>
+                  <option value="steel">Steel Structure</option>
+                  <option value="loadbearing">Load Bearing</option>
+                </select>
+              </div>
+            </div>
 
             <div className="form-group">
               <label>Style Preference</label>
@@ -401,6 +584,54 @@ const CreateProject = () => {
                     <span className="feature-check__label">{f.label}</span>
                   </div>
                 ))}
+                {/* Custom features */}
+                {form.customFeatures.map((cf, i) => (
+                  <div key={`custom-${i}`} className="feature-check selected">
+                    <div className="feature-check__box">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>
+                    </div>
+                    <span className="feature-check__icon">✏️</span>
+                    <span className="feature-check__label">{cf}</span>
+                    <span
+                      style={{ marginLeft: 'auto', cursor: 'pointer', fontSize: '16px', color: '#ef4444' }}
+                      onClick={() => setForm(prev => ({ ...prev, customFeatures: prev.customFeatures.filter((_, j) => j !== i) }))}
+                    >×</span>
+                  </div>
+                ))}
+              </div>
+              {/* Add custom feature */}
+              <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                <input
+                  type="text"
+                  value={form.customFeatureInput}
+                  onChange={e => updateField('customFeatureInput', e.target.value)}
+                  placeholder="Add custom requirement..."
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && form.customFeatureInput.trim()) {
+                      e.preventDefault();
+                      setForm(prev => ({
+                        ...prev,
+                        customFeatures: [...prev.customFeatures, prev.customFeatureInput.trim()],
+                        customFeatureInput: '',
+                      }));
+                    }
+                  }}
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  className="btn-form btn-form--secondary"
+                  style={{ whiteSpace: 'nowrap' }}
+                  onClick={() => {
+                    if (form.customFeatureInput.trim()) {
+                      setForm(prev => ({
+                        ...prev,
+                        customFeatures: [...prev.customFeatures, prev.customFeatureInput.trim()],
+                        customFeatureInput: '',
+                      }));
+                    }
+                  }}
+                >+ Add</button>
               </div>
             </div>
           </div>
@@ -417,14 +648,18 @@ const CreateProject = () => {
             <div className="ai-estimate-summary">
               <h3>Your Project Summary</h3>
               <div className="ai-estimate-summary__tags">
-                <span className="tag">🏠 {form.projectType || 'residential'}</span>
-                {form.floors && <span className="tag">🏢 {form.floors} floors</span>}
-                {form.bedrooms && <span className="tag">🛏️ {form.bedrooms} beds</span>}
-                {form.bathrooms && <span className="tag">🚿 {form.bathrooms} baths</span>}
+                <span className="tag">🏠 {form.projectType === 'other' ? (form.customProjectType || 'Other') : (PROJECT_TYPES.find(t => t.value === form.projectType)?.label || 'residential')}</span>
+                {form.floors > 0 && <span className="tag">🏢 {form.floors} floors</span>}
+                {form.bedrooms > 0 && <span className="tag">🛏️ {form.bedrooms} rooms</span>}
+                {form.bathrooms > 0 && <span className="tag">🚿 {form.bathrooms} baths</span>}
                 {form.plotSize && <span className="tag">📏 {form.plotSize} {form.plotUnit}</span>}
-                {form.style && <span className="tag">✨ {form.style}</span>}
+                {form.style && <span className="tag">✨ {STYLES.find(s => s.value === form.style)?.label || form.style}</span>}
                 {form.location.city && <span className="tag">📍 {form.location.city}</span>}
-                {form.selectedFeatures.map(f => <span key={f} className="tag tag--accent">⭐ {f}</span>)}
+                {form.selectedFeatures.map(f => {
+                  const feat = (FEATURES_BY_TYPE[form.projectType] || FEATURES_BY_TYPE.residential).find(ft => ft.id === f);
+                  return <span key={f} className="tag tag--accent">⭐ {feat ? feat.label : f.replace(/_/g, ' ')}</span>;
+                })}
+                {form.customFeatures.map((cf, i) => <span key={`cf-${i}`} className="tag tag--accent">✏️ {cf}</span>)}
               </div>
             </div>
 
@@ -657,12 +892,16 @@ const CreateProject = () => {
               <div className="review-section__card">
                 <h3>Requirements</h3>
                 <div className="review-section__tags">
-                  {form.floors && <span className="tag">🏢 {form.floors} floors</span>}
-                  {form.bedrooms && <span className="tag">🛏️ {form.bedrooms} bedrooms</span>}
-                  {form.bathrooms && <span className="tag">🚿 {form.bathrooms} bathrooms</span>}
+                  {form.floors > 0 && <span className="tag">🏢 {form.floors} floors</span>}
+                  {form.bedrooms > 0 && <span className="tag">🛏️ {form.bedrooms} rooms</span>}
+                  {form.bathrooms > 0 && <span className="tag">🚿 {form.bathrooms} bathrooms</span>}
                   {form.plotSize && <span className="tag">📏 {form.plotSize} {form.plotUnit}</span>}
-                  {form.style && <span className="tag">✨ {form.style}</span>}
-                  {form.selectedFeatures.map(f => <span key={f} className="tag tag--accent">⭐ {f.replace('_', ' ')}</span>)}
+                  {form.style && <span className="tag">✨ {STYLES.find(s => s.value === form.style)?.label || form.style}</span>}
+                  {form.selectedFeatures.map(f => {
+                    const feat = (FEATURES_BY_TYPE[form.projectType] || FEATURES_BY_TYPE.residential).find(ft => ft.id === f);
+                    return <span key={f} className="tag tag--accent">⭐ {feat ? feat.label : f.replace(/_/g, ' ')}</span>;
+                  })}
+                  {form.customFeatures.map((cf, i) => <span key={`cf-${i}`} className="tag tag--accent">✏️ {cf}</span>)}
                 </div>
               </div>
 
@@ -729,6 +968,7 @@ const CreateProject = () => {
           )}
         </div>
       </div>
+      {showVoice && <VoiceToProject onResult={handleVoiceResult} onClose={() => setShowVoice(false)} />}
     </div>
   );
 };

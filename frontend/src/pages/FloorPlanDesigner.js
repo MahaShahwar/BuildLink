@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -30,6 +30,8 @@ const FloorPlanDesigner = () => {
   const { projectId } = useParams();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const passedProject = location.state?.project;
 
   const [plan, setPlan] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -41,13 +43,50 @@ const FloorPlanDesigner = () => {
   const [history, setHistory] = useState([]);
   const [version, setVersion] = useState(0);
   const [hoveredRoom, setHoveredRoom] = useState(null);
+  const svgRef = useRef(null);
+
+  const handleDownload = (format) => {
+    const svgEl = svgRef.current;
+    if (!svgEl) return;
+    const svgData = new XMLSerializer().serializeToString(svgEl);
+    if (format === 'svg') {
+      const blob = new Blob([svgData], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `floorplan-${plan?.plotDimensions?.width}x${plan?.plotDimensions?.depth}.svg`;
+      a.click(); URL.revokeObjectURL(url);
+    } else {
+      const canvas = document.createElement('canvas');
+      const vb = svgEl.viewBox.baseVal;
+      canvas.width = vb.width * 3; canvas.height = vb.height * 3;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const img = new Image();
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const a = document.createElement('a'); a.href = canvas.toDataURL('image/png');
+        a.download = `floorplan-${plan?.plotDimensions?.width}x${plan?.plotDimensions?.depth}.png`;
+        a.click();
+      };
+      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+    }
+  };
 
   // Standalone mode form
   const [formMode, setFormMode] = useState(!projectId);
-  const [form, setForm] = useState({
-    plotSize: 5, plotUnit: 'marla', floors: 1, bedrooms: 3,
-    bathrooms: 2, kitchens: 1, livingRooms: 1, style: 'modern',
-    specialFeatures: [], description: '',
+  const [form, setForm] = useState(() => {
+    const req = passedProject?.nlpParsedRequirements || passedProject?.requirements || {};
+    return {
+      plotSize: req.plotSize?.value || 5,
+      plotUnit: req.plotSize?.unit || 'marla',
+      floors: req.floors || 1,
+      bedrooms: req.bedrooms || 3,
+      bathrooms: req.bathrooms || 2,
+      kitchens: 1,
+      livingRooms: 1,
+      style: req.style || 'modern',
+      specialFeatures: req.specialFeatures || [],
+      description: passedProject?.description || '',
+    };
   });
 
   // Load existing plan if projectId
@@ -60,8 +99,12 @@ const FloorPlanDesigner = () => {
           setHistory(res.data.data.history || []);
           setVersion(res.data.data.history?.length || 0);
           setFormMode(false);
+        } else {
+          setFormMode(true);
         }
-      }).catch(() => {}).finally(() => setLoading(false));
+      }).catch(() => {
+        setFormMode(true);
+      }).finally(() => setLoading(false));
     }
   }, [projectId]);
 
@@ -127,13 +170,17 @@ const FloorPlanDesigner = () => {
 
     return (
       <svg
+        ref={svgRef}
         viewBox={`0 0 ${svgW} ${svgH}`}
         className="fp-svg"
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* Plot boundary */}
+        {/* Background fill */}
         <rect x="30" y="40" width={pw * SCALE} height={pd * SCALE}
-          fill="none" stroke="#1e3a5f" strokeWidth="3" strokeDasharray="8,4" />
+          fill="#FAFAFA" stroke="none" />
+        {/* Plot boundary (thick architectural wall) */}
+        <rect x="30" y="40" width={pw * SCALE} height={pd * SCALE}
+          fill="none" stroke="#1e3a5f" strokeWidth="4" />
 
         {/* Dimensions */}
         <text x={30 + (pw * SCALE) / 2} y="25" textAnchor="middle" className="fp-dim">{pw} ft</text>
@@ -175,9 +222,55 @@ const FloorPlanDesigner = () => {
               <text x={rx + rw / 2} y={ry + rh / 2 + 10} textAnchor="middle" className="fp-room-dim">
                 {room.width}×{room.height} ft
               </text>
-              {/* Door indicator (small gap on one side) */}
-              <rect x={rx + rw / 2 - 6} y={ry + rh - 1.5} width="12" height="3"
-                fill={bgColor} stroke="none" />
+              {/* Doors */}
+              {(room.doors || []).map((door, di) => {
+                const dw = (door.width || 3) * SCALE;
+                const pos = door.position || 0.5;
+                let dx, dy, arcPath;
+                if (door.wall === 'bottom') {
+                  dx = rx + rw * pos - dw / 2; dy = ry + rh;
+                  arcPath = `M${dx},${dy} L${dx},${dy - dw} A${dw},${dw} 0 0,1 ${dx + dw},${dy}`;
+                } else if (door.wall === 'top') {
+                  dx = rx + rw * pos - dw / 2; dy = ry;
+                  arcPath = `M${dx},${dy} L${dx},${dy + dw} A${dw},${dw} 0 0,0 ${dx + dw},${dy}`;
+                } else if (door.wall === 'left') {
+                  dx = rx; dy = ry + rh * pos - dw / 2;
+                  arcPath = `M${dx},${dy} L${dx + dw},${dy} A${dw},${dw} 0 0,1 ${dx},${dy + dw}`;
+                } else {
+                  dx = rx + rw; dy = ry + rh * pos - dw / 2;
+                  arcPath = `M${dx},${dy} L${dx - dw},${dy} A${dw},${dw} 0 0,0 ${dx},${dy + dw}`;
+                }
+                return <g key={`d${di}`}>
+                  <rect x={door.wall === 'left' || door.wall === 'right' ? dx - 1.5 : dx} y={door.wall === 'top' || door.wall === 'bottom' ? dy - 1.5 : dy}
+                    width={door.wall === 'left' || door.wall === 'right' ? 3 : dw} height={door.wall === 'top' || door.wall === 'bottom' ? 3 : dw}
+                    fill={bgColor} stroke="none" />
+                  <path d={arcPath} fill="none" stroke="#555" strokeWidth="1" />
+                </g>;
+              })}
+              {/* Windows */}
+              {(room.windows || []).map((win, wi) => {
+                const ww = (win.width || 3) * SCALE;
+                const pos = win.position || 0.5;
+                let wx1, wy1, wx2, wy2;
+                if (win.wall === 'bottom') {
+                  wx1 = rx + rw * pos - ww / 2; wy1 = ry + rh; wx2 = wx1 + ww; wy2 = wy1;
+                } else if (win.wall === 'top') {
+                  wx1 = rx + rw * pos - ww / 2; wy1 = ry; wx2 = wx1 + ww; wy2 = wy1;
+                } else if (win.wall === 'left') {
+                  wx1 = rx; wy1 = ry + rh * pos - ww / 2; wx2 = wx1; wy2 = wy1 + ww;
+                } else {
+                  wx1 = rx + rw; wy1 = ry + rh * pos - ww / 2; wx2 = wx1; wy2 = wy1 + ww;
+                }
+                const isV = win.wall === 'left' || win.wall === 'right';
+                return <g key={`w${wi}`}>
+                  <rect x={isV ? wx1 - 1.5 : wx1} y={isV ? wy1 : wy1 - 1.5}
+                    width={isV ? 3 : ww} height={isV ? ww : 3} fill={bgColor} stroke="none" />
+                  <line x1={wx1} y1={wy1} x2={wx2} y2={wy2} stroke="#2196F3" strokeWidth="2.5" />
+                  <line x1={isV ? wx1 + (win.wall === 'left' ? -2 : 2) : wx1} y1={isV ? wy1 : wy1 + (win.wall === 'top' ? -2 : 2)}
+                    x2={isV ? wx2 + (win.wall === 'left' ? -2 : 2) : wx2} y2={isV ? wy2 : wy2 + (win.wall === 'top' ? -2 : 2)}
+                    stroke="#2196F3" strokeWidth="1" strokeDasharray="3,2" />
+                </g>;
+              })}
             </g>
           );
         })}
@@ -188,6 +281,14 @@ const FloorPlanDesigner = () => {
           <text x="0" y="-3" textAnchor="middle" className="fp-compass">N</text>
           <line x1="0" y1="2" x2="0" y2="10" stroke="#1e3a5f" strokeWidth="1.5" />
         </g>
+        {/* Door/Window legend */}
+        <g transform={`translate(${svgW - 80}, ${svgH - 30})`}>
+          <path d="M0,0 L0,-10 A10,10 0 0,1 10,0" fill="none" stroke="#555" strokeWidth="1" />
+          <text x="14" y="-1" style={{ fontSize: '8px', fill: '#666' }}>Door</text>
+          <line x1="30" y1="0" x2="50" y2="0" stroke="#2196F3" strokeWidth="2.5" />
+          <line x1="30" y1="-3" x2="50" y2="-3" stroke="#2196F3" strokeWidth="1" strokeDasharray="3,2" />
+          <text x="54" y="-1" style={{ fontSize: '8px', fill: '#666' }}>Window</text>
+        </g>
       </svg>
     );
   };
@@ -197,15 +298,17 @@ const FloorPlanDesigner = () => {
   return (
     <div className="floor-plan-designer">
       <div className="fpd-container">
+        {/* Back link */}
+        {projectId && (
+          <button className="fpd-back" onClick={() => navigate(`/projects/${projectId}`)}>← Back to Project</button>
+        )}
+
         {/* Header */}
         <div className="fpd-header">
           <div>
             <h1>🏠 AI Floor Plan Designer</h1>
             <p>Design your dream home with AI-powered architectural layouts</p>
           </div>
-          {projectId && (
-            <button className="fpd-back" onClick={() => navigate(`/projects/${projectId}`)}>← Back to Project</button>
-          )}
         </div>
 
         {/* Input Form (shown initially or when no plan) */}
@@ -420,6 +523,12 @@ const FloorPlanDesigner = () => {
             <div className="fpd-actions">
               <button className="fpd-action-btn fpd-action-btn--secondary" onClick={() => setFormMode(true)}>
                 🔄 New Design
+              </button>
+              <button className="fpd-action-btn fpd-action-btn--primary" onClick={() => handleDownload('png')}>
+                📥 Download PNG
+              </button>
+              <button className="fpd-action-btn fpd-action-btn--secondary" onClick={() => handleDownload('svg')}>
+                📐 Download SVG
               </button>
               {!projectId && (
                 <button className="fpd-action-btn fpd-action-btn--primary" onClick={() => navigate('/projects/new')}>

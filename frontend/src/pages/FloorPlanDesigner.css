@@ -5,7 +5,7 @@
 .fpd-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
 .fpd-header h1 { font-size: 1.8rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
 .fpd-header p { color: var(--text-secondary); font-size: 0.95rem; }
-.fpd-back { background: none; border: none; color: var(--primary, #3b82f6); font-weight: 600; cursor: pointer; }
+.fpd-back { background: none; border: none; color: var(--primary, #3b82f6); font-weight: 600; cursor: pointer; font-size: 0.9rem; margin-bottom: 12px; padding: 0; display: inline-block; }
 
 /* Form Card */
 .fpd-form-card { background: var(--bg-secondary, #fff); border-radius: 20px; padding: 32px; border: 1.5px solid var(--border-color, #e2e8f0); margin-bottom: 24px; }

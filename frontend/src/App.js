@@ -17,6 +17,8 @@ import MyRequests from './pages/MyRequests';
 import EngineerProfile from './pages/EngineerProfile';
 import ProjectDetail from './pages/ProjectDetail';
 import FloorPlanDesigner from './pages/FloorPlanDesigner';
+import AdminDashboard from './pages/AdminDashboard';
+import AIChatbot from './components/common/AIChatbot';
 
 function App() {
   return (
@@ -38,7 +40,9 @@ function App() {
           <Route path="/engineer-profile" element={<EngineerProfile />} />
           <Route path="/design" element={<FloorPlanDesigner />} />
           <Route path="/projects/:projectId/design" element={<FloorPlanDesigner />} />
+          <Route path="/admin" element={<AdminDashboard />} />
         </Routes>
+        <AIChatbot />
         <ToastContainer position="top-right" autoClose={3000} theme="colored" />
       </Router>
     </AuthProvider>
