@@ -1,7 +1,5 @@
 # BuildLink — AI-Powered Construction Ecosystem
 
-> **Al-Khidmat Foundation AI Hackathon 2026**
-
 BuildLink is a full-stack AI-powered platform that automates the entire residential design workflow in Pakistan — from voice-based project creation in Urdu to AI floor plans, smart engineer matching, escrow payments, and milestone-tracked delivery.
 
 ## 🎯 Problem
