@@ -117,35 +117,52 @@ router.get('/my-requests', protect, authorize('engineer', 'architect'), async (r
 router.put('/respond/:projectId', protect, authorize('engineer', 'architect'), async (req, res) => {
   try {
     const { action } = req.body; // 'accept' or 'decline'
-    if (!['accept', 'decline'].includes(action)) {
-      return res.status(400).json({ success: false, message: 'Action must be accept or decline' });
+    if (!['accept', 'decline', 'withdraw'].includes(action)) {
+      return res.status(400).json({ success: false, message: 'Action must be accept, decline, or withdraw' });
     }
 
     const profile = await EngineerProfile.findOne({ user: req.user.id });
     const project = await Project.findById(req.params.projectId);
     if (!project) return res.status(404).json({ success: false, message: 'Project not found' });
 
+    const app = project.applications?.find(
+      a => a.engineer.toString() === profile._id.toString()
+    );
+    if (!app) return res.status(404).json({ success: false, message: 'Application not found' });
+
     if (action === 'accept') {
+      // Engineer can only accept if customer has selected them
+      if (app.status !== 'selected') {
+        return res.status(400).json({ success: false, message: 'You can only accept after the customer selects you' });
+      }
+      app.status = 'accepted';
       project.assignedEngineer = profile._id;
       project.status = 'in_progress';
-
-      // Update application status
-      const app = project.applications?.find(
-        a => a.engineer.toString() === profile._id.toString()
+      // Decline all other applications
+      project.applications.forEach(a => {
+        if (a.engineer.toString() !== profile._id.toString() && a.status !== 'withdrawn') {
+          a.status = 'declined';
+        }
+      });
+    } else if (action === 'decline') {
+      // Engineer declines customer's selection
+      if (app.status !== 'selected') {
+        return res.status(400).json({ success: false, message: 'Nothing to decline' });
+      }
+      app.status = 'declined';
+    } else if (action === 'withdraw') {
+      // Engineer withdraws their own pending application
+      project.applications = project.applications.filter(
+        a => a.engineer.toString() !== profile._id.toString()
       );
-      if (app) app.status = 'accepted';
-    } else {
-      const app = project.applications?.find(
-        a => a.engineer.toString() === profile._id.toString()
-      );
-      if (app) app.status = 'declined';
     }
 
     await project.save();
 
+    const messages = { accept: 'Project accepted! You can now start working.', decline: 'Project declined.', withdraw: 'Application withdrawn.' };
     res.json({
       success: true,
-      message: action === 'accept' ? 'Project accepted! You can now start working.' : 'Project declined.',
+      message: messages[action],
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -187,7 +204,7 @@ router.put('/submit-milestone/:projectId/:milestoneIndex', protect, authorize('e
     project.milestones[idx].status = 'submitted';
     project.milestones[idx].submittedAt = new Date();
     if (req.body.deliverables) {
-      project.milestones[idx].deliverables = req.body.deliverables;
+      project.milestones[idx].milestoneDeliverables = req.body.deliverables;
     }
 
     await project.save();

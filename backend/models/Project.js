@@ -13,22 +13,33 @@ const ProjectSchema = new mongoose.Schema({
 
   // NLP-parsed project details
   title: { type: String, required: true },
-  description: { type: String, required: true },
+  description: { type: String, default: '' },
   nlpParsedRequirements: {
-    structureType: String,    // residential, commercial, industrial
+    structureType: String,
     purpose: String,
     floors: Number,
     bedrooms: Number,
     bathrooms: Number,
     plotSize: { value: Number, unit: String },
     builtUpArea: { value: Number, unit: String },
-    style: String,            // modern, traditional, minimalist
+    style: String,
     sustainability: [String],
     specialFeatures: [String],
   },
+  requirements: {
+    floors: Number,
+    rooms: Number,
+    bathrooms: Number,
+    plotSize: String,
+    plotUnit: String,
+    structuralType: String,
+    style: String,
+    features: [String],
+    customFeatures: [String],
+  },
+  purpose: String,
   projectType: {
     type: String,
-    enum: ['residential', 'commercial', 'industrial', 'renovation', 'interior'],
     required: true,
   },
   location: {
@@ -84,13 +95,20 @@ const ProjectSchema = new mongoose.Schema({
     amount: Number,
     status: {
       type: String,
-      enum: ['pending', 'in_progress', 'submitted', 'approved', 'paid', 'disputed'],
+      enum: ['pending', 'in_progress', 'submitted', 'approved', 'revised', 'rejected', 'paid', 'disputed'],
       default: 'pending',
     },
     dueDate: Date,
+    startedAt: Date,
     submittedAt: Date,
     approvedAt: Date,
-    deliverables: [String],
+    milestoneDeliverables: [String],
+    revisionComment: String,
+    revisionHistory: [{
+      comment: String,
+      by: { type: String, enum: ['customer', 'engineer'] },
+      at: { type: Date, default: Date.now },
+    }],
   }],
 
   // Engineer applications
@@ -101,7 +119,7 @@ const ProjectSchema = new mongoose.Schema({
     proposedTimeline: Number, // days
     status: {
       type: String,
-      enum: ['pending', 'accepted', 'declined', 'withdrawn'],
+      enum: ['pending', 'selected', 'accepted', 'declined', 'withdrawn'],
       default: 'pending',
     },
     appliedAt: { type: Date, default: Date.now },
@@ -125,9 +143,44 @@ const ProjectSchema = new mongoose.Schema({
     uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   }],
 
-  // Escrow
+  // Deliverables (engineer uploads)
+  deliverables: [{
+    filename: String,
+    storedName: String,
+    path: String,
+    size: Number,
+    fileType: String,
+    uploadedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    uploaderRole: { type: String, enum: ['customer', 'engineer'] },
+    uploaderName: String,
+    milestone: String,
+    description: String,
+    uploadedAt: { type: Date, default: Date.now },
+  }],
+
+  // Escrow Payment System
+  escrow: {
+    status: { type: String, enum: ['unfunded', 'funded', 'partially_released', 'fully_released', 'refunded'], default: 'unfunded' },
+    totalAmount: { type: Number, default: 0 },
+    releasedAmount: { type: Number, default: 0 },
+    fundedAt: Date,
+    paymentMethod: { type: String, default: 'bank_transfer' },
+    transactions: [{
+      type: { type: String, enum: ['deposit', 'release', 'refund'] },
+      amount: Number,
+      milestone: String,
+      note: String,
+      createdAt: { type: Date, default: Date.now },
+    }],
+  },
   escrowTotal: { type: Number, default: 0 },
   escrowReleased: { type: Number, default: 0 },
+
+  // AI Risk Analysis (cached)
+  riskAnalysis: { type: mongoose.Schema.Types.Mixed },
+
+  // AI Material Breakdown (cached)
+  materialBreakdown: { type: mongoose.Schema.Types.Mixed },
 
   // AI matching data
   matchedEngineers: [{
@@ -135,6 +188,46 @@ const ProjectSchema = new mongoose.Schema({
     score: Number,
     matchedAt: Date,
   }],
+
+  // AI-generated timeline (cached)
+  aiTimeline: { type: mongoose.Schema.Types.Mixed },
+
+  // Ratings & Reviews
+  ratings: {
+    customerToEngineer: {
+      rating: { type: Number, min: 1, max: 5 },
+      review: String,
+      ratedAt: Date,
+    },
+    engineerToCustomer: {
+      rating: { type: Number, min: 1, max: 5 },
+      review: String,
+      ratedAt: Date,
+    },
+  },
+
+  // Messages between customer & engineer
+  messages: [{
+    sender: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    senderRole: { type: String, enum: ['customer', 'engineer'] },
+    text: String,
+    type: { type: String, enum: ['message', 'rate_proposal', 'rate_accepted', 'system'], default: 'message' },
+    rateProposal: { amount: Number, currency: { type: String, default: 'PKR' }, rateType: { type: String, enum: ['hourly', 'weekly', 'monthly', 'fixed'], default: 'fixed' } },
+    sentAt: { type: Date, default: Date.now },
+  }],
+
+  // Agreed rate after negotiation
+  agreedRate: {
+    amount: Number,
+    rateType: { type: String, enum: ['hourly', 'weekly', 'monthly', 'fixed'], default: 'fixed' },
+    currency: { type: String, default: 'PKR' },
+    proposedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    acceptedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    finalizedAt: Date,
+  },
+  rateFinalized: { type: Boolean, default: false },
+
+  completedAt: Date,
 
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

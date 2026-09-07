@@ -96,19 +96,21 @@
 .dashboard__action-card--primary {
   background: linear-gradient(135deg, #1e3a8a, #3b82f6);
   border: none;
-  color: white;
+  color: #fff !important;
 }
 
 .dashboard__action-card--primary:hover {
   box-shadow: 0 8px 30px rgba(59, 130, 246, 0.3);
 }
 
-.dashboard__action-card--primary h3 {
-  color: white;
+.dashboard__action-card--primary h3,
+.dashboard__action-card--primary h3 * {
+  color: #fff !important;
 }
 
-.dashboard__action-card--primary p {
-  color: rgba(255, 255, 255, 0.7);
+.dashboard__action-card--primary p,
+.dashboard__action-card--primary p * {
+  color: #e0e7ff !important;
 }
 
 .dashboard__action-icon {
@@ -131,6 +133,9 @@
   margin-left: auto;
   flex-shrink: 0;
   opacity: 0.4;
+}
+.dashboard__action-card--primary svg {
+  opacity: 0.9;
 }
 
 /* Stats Row */

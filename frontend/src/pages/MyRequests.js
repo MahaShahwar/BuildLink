@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 import { getEngineerRequests, respondToProject } from '../services/api';
 import './MyRequests.css';
 
 const MyRequests = () => {
+  const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -25,7 +27,7 @@ const MyRequests = () => {
     try {
       const res = await respondToProject(projectId, { action });
       if (res.data.success) {
-        toast.success(action === 'accept' ? '✅ Project accepted!' : '❌ Project declined');
+        toast.success(action === 'accept' ? '✅ Project accepted!' : action === 'withdraw' ? '↩️ Application withdrawn' : '❌ Project declined');
         fetchRequests();
       }
     } catch (err) {
@@ -41,7 +43,7 @@ const MyRequests = () => {
   const filtered = filter === 'all' ? requests :
     requests.filter(r => getStatus(r) === filter);
 
-  const statusColors = { pending: '#f59e0b', accepted: '#10b981', declined: '#ef4444' };
+  const statusColors = { pending: '#f59e0b', selected: '#3b82f6', accepted: '#10b981', declined: '#ef4444' };
 
   return (
     <div className="my-requests">
@@ -52,7 +54,7 @@ const MyRequests = () => {
         </div>
 
         <div className="my-requests__tabs">
-          {['all', 'pending', 'accepted', 'declined'].map(tab => (
+          {['all', 'pending', 'selected', 'accepted', 'declined'].map(tab => (
             <button key={tab}
               className={`my-requests__tab ${filter === tab ? 'my-requests__tab--active' : ''}`}
               onClick={() => setFilter(tab)}>
@@ -96,20 +98,39 @@ const MyRequests = () => {
                     {project.customer && <span>👤 {project.customer.firstName} {project.customer.lastName}</span>}
                   </div>
 
-                  {status === 'pending' && (
-                    <div className="request-card__actions">
-                      <button className="request-card__accept"
-                        disabled={responding === project._id + 'accept'}
-                        onClick={() => handleRespond(project._id, 'accept')}>
-                        {responding === project._id + 'accept' ? '...' : '✅ Accept'}
-                      </button>
+                  <div className="request-card__actions">
+                    <button className="request-card__view"
+                      onClick={() => navigate(`/projects/${project._id}`)}>
+                      👁️ View Project
+                    </button>
+                    {status === 'pending' && (
                       <button className="request-card__decline"
-                        disabled={responding === project._id + 'decline'}
-                        onClick={() => handleRespond(project._id, 'decline')}>
-                        {responding === project._id + 'decline' ? '...' : '❌ Decline'}
+                        disabled={responding === project._id + 'withdraw'}
+                        onClick={() => handleRespond(project._id, 'withdraw')}>
+                        {responding === project._id + 'withdraw' ? '...' : '↩️ Withdraw'}
                       </button>
-                    </div>
-                  )}
+                    )}
+                    {status === 'selected' && (
+                      <>
+                        <button className="request-card__accept"
+                          disabled={responding === project._id + 'accept'}
+                          onClick={() => handleRespond(project._id, 'accept')}>
+                          {responding === project._id + 'accept' ? '...' : '✅ Accept'}
+                        </button>
+                        <button className="request-card__decline"
+                          disabled={responding === project._id + 'decline'}
+                          onClick={() => handleRespond(project._id, 'decline')}>
+                          {responding === project._id + 'decline' ? '...' : '❌ Decline'}
+                        </button>
+                      </>
+                    )}
+                    {status === 'accepted' && (
+                      <span style={{ color: '#10b981', fontWeight: 600, fontSize: '14px' }}>✅ You accepted this project</span>
+                    )}
+                    {status === 'declined' && (
+                      <span style={{ color: '#ef4444', fontWeight: 600, fontSize: '14px' }}>❌ Declined</span>
+                    )}
+                  </div>
                 </div>
               );
             })}

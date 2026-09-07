@@ -117,9 +117,9 @@ const MyProjects = () => {
                       💰 {formatPKR(project.estimatedCost.min)} — {formatPKR(project.estimatedCost.max)}
                     </span>
                   )}
-                  {project.nlpParsedRequirements?.floors && <span>🏢 {project.nlpParsedRequirements.floors} floors</span>}
-                  {project.nlpParsedRequirements?.bedrooms && <span>🛏️ {project.nlpParsedRequirements.bedrooms} beds</span>}
-                  {project.nlpParsedRequirements?.style && <span>✨ {project.nlpParsedRequirements.style}</span>}
+                  {(project.requirements?.floors ?? project.nlpParsedRequirements?.floors) > 0 && <span>🏢 {project.requirements?.floors ?? project.nlpParsedRequirements?.floors} floors</span>}
+                  {(project.requirements?.rooms ?? project.nlpParsedRequirements?.bedrooms) > 0 && <span>🛏️ {project.requirements?.rooms ?? project.nlpParsedRequirements?.bedrooms} rooms</span>}
+                  {(project.requirements?.style || project.nlpParsedRequirements?.style) ? <span>✨ {project.requirements?.style || project.nlpParsedRequirements?.style}</span> : null}
                   <span>📅 {new Date(project.createdAt).toLocaleDateString()}</span>
                   {project.applications?.length > 0 && (
                     <span className="my-projects__card-apps">📩 {project.applications.length} application{project.applications.length !== 1 ? 's' : ''}</span>

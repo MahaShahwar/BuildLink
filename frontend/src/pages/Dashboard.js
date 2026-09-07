@@ -122,7 +122,7 @@ const Dashboard = () => {
                 </div>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
               </Link>
-              <Link to="/" className="dashboard__action-card" onClick={(e) => { e.preventDefault(); navigate('/#features'); }}>
+              <Link to="/projects/new" className="dashboard__action-card">
                 <div className="dashboard__action-icon">🤖</div>
                 <div>
                   <h3>AI Cost Estimator</h3>
@@ -182,7 +182,7 @@ const Dashboard = () => {
               ) : (
                 <div className="dashboard__projects-list">
                   {projects.slice(0, 5).map((project, i) => (
-                    <div key={i} className="dashboard__project-card">
+                    <div key={i} className="dashboard__project-card" onClick={() => navigate(`/projects/${project._id}`)} style={{ cursor: 'pointer' }}>
                       <div className="dashboard__project-main">
                         <div className="dashboard__project-type-icon">
                           {project.projectType === 'residential' ? '🏠' : project.projectType === 'commercial' ? '🏢' : '🏗️'}
@@ -325,7 +325,7 @@ const Dashboard = () => {
               ) : (
                 <div className="dashboard__projects-list">
                   {engActiveProjects.map((project, i) => (
-                    <div key={i} className="dashboard__project-card">
+                    <div key={i} className="dashboard__project-card" onClick={() => navigate(`/projects/${project._id}`)} style={{ cursor: 'pointer' }}>
                       <div className="dashboard__project-main">
                         <div className="dashboard__project-type-icon">
                           {project.projectType === 'residential' ? '🏠' : project.projectType === 'commercial' ? '🏢' : '🏗️'}

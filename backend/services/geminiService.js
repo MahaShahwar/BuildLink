@@ -206,6 +206,10 @@ IMPORTANT LAYOUT RULES:
 8. Attach bathrooms to bedrooms where possible.
 9. Include a staircase room if floors > 1.
 10. Include car porch at front if plot allows.
+11. Every room MUST have at least one door. Doors connect rooms or lead to corridors.
+12. Rooms along exterior walls MUST have windows (1-2 per exterior wall). Interior rooms have no windows.
+13. Door "position" is 0-1 fraction along that wall (0.5=center). Door "width" is 2.5-3ft. Window "width" is 3-4ft.
+14. Bathrooms have small windows (2ft). Bedrooms and living rooms have larger windows (4ft).
 
 Return this JSON structure:
 {
@@ -226,7 +230,13 @@ Return this JSON structure:
           "height": number_feet,
           "area": number_sqft,
           "features": ["attached bath", "walk-in closet"],
-          "color": "hex_color_for_room_type"
+          "color": "hex_color_for_room_type",
+          "doors": [
+            { "wall": "bottom|top|left|right", "position": 0.5, "width": 3 }
+          ],
+          "windows": [
+            { "wall": "bottom|top|left|right", "position": 0.5, "width": 3 }
+          ]
         }
       ]
     }
@@ -295,4 +305,294 @@ Return the COMPLETE updated floor plan in the EXACT same JSON structure as the i
   }
 }
 
-module.exports = { analyzeProjectWithAI, aiMatchEngineers, askConstructionAI, generateFloorPlan, amendFloorPlan };
+/**
+ * AI Risk Analysis — identify construction risks for a project
+ */
+async function analyzeProjectRisks(projectData) {
+  const { title, description, location, nlpParsedRequirements: req, budget, estimatedCost } = projectData;
+
+  const prompt = `You are BuildLink AI — an expert construction risk analyst for Pakistan.
+
+Analyze this residential construction project and identify potential risks:
+
+Project: "${title}"
+Description: "${description}"
+Location: ${location?.city || 'Unknown'}, ${location?.state || ''}, Pakistan
+Plot Size: ${req?.plotSize?.value || 'Unknown'} ${req?.plotSize?.unit || 'marla'}
+Floors: ${req?.floors || 'Unknown'}
+Bedrooms: ${req?.bedrooms || 'Unknown'}, Bathrooms: ${req?.bathrooms || 'Unknown'}
+Style: ${req?.style || 'Unknown'}
+Special Features: ${req?.specialFeatures?.join(', ') || 'None'}
+Budget: PKR ${budget?.min || 0} - ${budget?.max || 0}
+AI Estimated Cost: PKR ${estimatedCost?.min || 0} - ${estimatedCost?.max || 0}
+
+Return a JSON object with this exact structure:
+{
+  "overallRiskLevel": "low" | "medium" | "high",
+  "budgetRisk": {
+    "level": "low" | "medium" | "high",
+    "message": "brief explanation about budget adequacy"
+  },
+  "risks": [
+    {
+      "category": "structural" | "environmental" | "regulatory" | "budget" | "timeline" | "material" | "design",
+      "severity": "low" | "medium" | "high",
+      "title": "Short risk title",
+      "description": "2-3 sentence explanation specific to this project and location",
+      "mitigation": "Practical recommendation to address this risk"
+    }
+  ],
+  "recommendations": [
+    "Top practical recommendation for this project"
+  ]
+}
+
+Include 4-6 risks relevant to the specific location and project type in Pakistan.
+Focus on practical, location-specific risks (e.g., water table in Lahore, seismic in Islamabad, heat in Karachi).
+Return ONLY the JSON, no markdown.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.5-flash',
+      contents: prompt,
+    });
+
+    const text = response.text.trim();
+    const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const parsed = JSON.parse(cleaned);
+    return { success: true, data: parsed };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * AI Material Breakdown — generate detailed material list with quantities and costs
+ */
+async function generateMaterialBreakdown(projectData) {
+  const { title, description, location, nlpParsedRequirements: req, estimatedCost } = projectData;
+
+  const prompt = `You are BuildLink AI — a construction material estimator for Pakistan.
+
+Generate a detailed material breakdown for this residential construction project:
+
+Project: "${title}"
+Description: "${description}"
+Location: ${location?.city || 'Unknown'}, Pakistan
+Plot Size: ${req?.plotSize?.value || 5} ${req?.plotSize?.unit || 'marla'}
+Built-up Area: ${req?.builtUpArea?.value || 'Unknown'} ${req?.builtUpArea?.unit || 'sqft'}
+Floors: ${req?.floors || 1}
+Bedrooms: ${req?.bedrooms || 3}, Bathrooms: ${req?.bathrooms || 2}
+Style: ${req?.style || 'modern'}
+Special Features: ${req?.specialFeatures?.join(', ') || 'None'}
+Estimated Cost: PKR ${estimatedCost?.min || 0} - ${estimatedCost?.max || 0}
+
+Return a JSON object with this exact structure:
+{
+  "summary": "One line summary of material requirements",
+  "categories": [
+    {
+      "name": "Category name (e.g., Structural, Electrical, Plumbing, Finishing)",
+      "icon": "emoji",
+      "items": [
+        {
+          "material": "Material name",
+          "quantity": "Amount with unit (e.g., 350 bags, 12 tons)",
+          "unitCost": "PKR per unit estimate",
+          "totalCost": estimated total in PKR as number,
+          "grade": "Recommended grade/brand type",
+          "notes": "Brief note if relevant"
+        }
+      ],
+      "subtotal": category total in PKR as number
+    }
+  ],
+  "grandTotal": total of all materials in PKR as number,
+  "tips": [
+    "2-3 money-saving tips specific to this location and project"
+  ]
+}
+
+Include these categories: Structural (cement, steel, bricks, sand, crush), Electrical, Plumbing, Finishing (tiles, paint, fixtures), Woodwork (doors, windows), and Miscellaneous.
+Use current 2024-2025 Pakistan market rates. Be specific with quantities.
+Return ONLY the JSON, no markdown.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.5-flash',
+      contents: prompt,
+    });
+
+    const text = response.text.trim();
+    const cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const parsed = JSON.parse(cleaned);
+    return { success: true, data: parsed };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * AI Timeline Generation — create project milestones with durations
+ */
+function generateProjectTimeline(projectData) {
+  const { location } = projectData;
+  const reqs = projectData.requirements || {};
+  const req = projectData.nlpParsedRequirements || {};
+  const floors = reqs.floors || req.floors || 1;
+  const city = location?.city || 'Unknown';
+  const projectType = projectData.projectType || 'residential';
+
+  // Scale duration based on project complexity
+  const isLarge = floors >= 3 || projectType === 'commercial' || projectType === 'industrial';
+  const scale = isLarge ? 1.5 : 1;
+
+  const milestones = [
+    {
+      title: 'Site Analysis & Client Brief',
+      description: `Site visit and survey of the ${reqs.plotSize || 'N/A'} ${reqs.plotUnit || 'marla'} plot in ${city}. Coordinate geotechnical soil testing, document existing site conditions, and finalize the client requirements brief for a ${floors}-floor ${projectType} project.`,
+      durationDays: Math.round(7 * scale),
+      deliverables: ['Site Visit Report', 'Geotechnical Soil Test Report', 'Client Requirements Document', 'Site Survey & Measurements'],
+      costPercentage: 8,
+    },
+    {
+      title: 'Conceptual Design',
+      description: `Develop 2-3 initial design concepts with mood boards, preliminary sketches, and concept floor plan layouts. Present options to client for feedback and selection.`,
+      durationDays: Math.round(10 * scale),
+      deliverables: ['Design Concept Options (2-3)', 'Mood Boards', 'Preliminary Sketches', 'Concept Floor Plans'],
+      costPercentage: 12,
+    },
+    {
+      title: 'Detailed Architectural Drawings',
+      description: `Prepare final architectural drawings based on the approved concept — detailed floor plans for all ${floors} floors, building elevations, cross-sections, and 3D rendered views.`,
+      durationDays: Math.round(14 * scale),
+      deliverables: ['Final Floor Plans (all floors)', 'Building Elevations', 'Cross-Section Drawings', '3D Renders & Visualizations'],
+      costPercentage: 20,
+    },
+    {
+      title: 'Structural Engineering Design',
+      description: `Design the complete structural system — foundation type, beam/column layouts, slab designs, and load calculations suitable for the ${city} seismic zone and soil conditions.`,
+      durationDays: Math.round(10 * scale),
+      deliverables: ['Structural Drawings', 'Foundation Design', 'Beam & Column Layout', 'Load Calculation Report', 'Steel/Concrete Specifications'],
+      costPercentage: 18,
+    },
+    {
+      title: 'MEP Design',
+      description: `Prepare mechanical, electrical, and plumbing design layouts — electrical wiring diagrams, plumbing supply & drainage plans, and HVAC system design if applicable.`,
+      durationDays: Math.round(10 * scale),
+      deliverables: ['Electrical Wiring Layout', 'Plumbing Layout (Supply & Drainage)', 'HVAC Design Drawings', 'Fire Safety Layout'],
+      costPercentage: 15,
+    },
+    {
+      title: 'Cost Estimation & BOQ',
+      description: `Prepare a detailed bill of quantities with material specifications, vendor rate analysis, and a comprehensive cost breakdown report for the entire project.`,
+      durationDays: Math.round(7 * scale),
+      deliverables: ['Bill of Quantities (BOQ)', 'Material Specifications', 'Cost Breakdown Report', 'Vendor Rate Analysis'],
+      costPercentage: 10,
+    },
+    {
+      title: 'Regulatory Submission',
+      description: `Compile and submit building permit application to ${city === 'Lahore' ? 'LDA' : city === 'Islamabad' ? 'CDA' : city === 'Multan' ? 'MDA' : 'local authority'}. Prepare NOC applications and all required documentation for approval.`,
+      durationDays: Math.round(14 * scale),
+      deliverables: ['Building Permit Application', 'NOC Application Documents', 'Authority Submission Package', 'Compliance Checklist'],
+      costPercentage: 7,
+    },
+    {
+      title: 'Final Design Package Handover',
+      description: `Compile the complete design package — all approved architectural, structural, and MEP drawings with specifications. Deliver construction-ready documentation to client.`,
+      durationDays: Math.round(5 * scale),
+      deliverables: ['Complete Design Package', 'Construction-Ready Drawings', 'Specifications Document', 'Design Approval Certificate'],
+      costPercentage: 10,
+    },
+  ];
+
+  const totalDays = milestones.reduce((sum, m) => sum + m.durationDays, 0);
+  const totalWeeks = Math.ceil(totalDays / 7);
+
+  let currentWeek = 1;
+  const phases = milestones.map((m, i) => {
+    const durationWeeks = Math.ceil(m.durationDays / 7);
+    const phase = {
+      name: m.title,
+      icon: ['📋', '🎨', '📐', '🏗️', '⚡', '💰', '📝', '📦'][i],
+      durationWeeks,
+      startWeek: currentWeek,
+      milestones: [m],
+    };
+    currentWeek += durationWeeks;
+    return phase;
+  });
+
+  return {
+    success: true,
+    data: {
+      totalDurationWeeks: totalWeeks,
+      phases,
+      criticalPath: [
+        'Client approval on conceptual design before detailed drawings',
+        'Soil test results needed before structural design',
+        `${city === 'Lahore' ? 'LDA' : city === 'Islamabad' ? 'CDA' : city === 'Multan' ? 'MDA' : 'Local authority'} approval timeline may vary`,
+        'Structural design depends on finalized architectural drawings',
+      ],
+      designNotes: `Design timeline for a ${floors}-floor ${projectType} project in ${city}. All deliverables are documents and drawings — no physical construction is included.`,
+    },
+  };
+}
+
+/**
+ * Voice/Text to Project — parse natural language (Urdu/English) into structured project data
+ */
+async function parseVoiceToProject(text) {
+  const prompt = `You are BuildLink AI — a construction project assistant for Pakistan. The user has described their dream project in natural language (could be in Urdu, English, or a mix of both — Roman Urdu included). Parse their description and extract structured project data.
+
+User's description: "${text}"
+
+Return ONLY valid JSON with this exact structure (use English for all values):
+{
+  "title": "A short descriptive project title in English",
+  "description": "A clean 1-2 sentence project description in English",
+  "projectType": "residential" | "commercial" | "industrial" | "renovation" | "interior" | "other",
+  "customProjectType": "only if projectType is other, describe it",
+  "purpose": "family_home" | "rental_property" | "investment" | "personal_villa" | "office_space" | "retail_shop" | "warehouse" | "restaurant" | "showroom" | "factory" | "full_renovation" | "room_addition" | "kitchen_remodel" | "home_office" | "living_room" | "bedroom_design" | "kitchen_design" | "other",
+  "location": {
+    "city": "city name if mentioned, otherwise empty string",
+    "state": "Punjab" | "Sindh" | "KPK" | "Balochistan" | "Islamabad" | "",
+    "country": "Pakistan"
+  },
+  "floors": number (default 1),
+  "rooms": number (default 3),
+  "bathrooms": number (default 2),
+  "plotSize": "number as string, e.g. '5' or '10'",
+  "plotUnit": "marla" | "kanal" | "sqft" | "sqm",
+  "style": "modern" | "traditional" | "contemporary" | "minimalist" | "islamic" | "colonial" | "mediterranean" | "farmhouse" | "",
+  "budgetMin": number or null (in PKR),
+  "budgetMax": number or null (in PKR),
+  "features": ["feature IDs from this list: parking, garden, boundary_wall, servant_quarter, rooftop, solar_panels, rainwater_harvesting, smart_home, security_system, swimming_pool, home_theater, gym, elevator, basement, open_kitchen, store_room, laundry_room, balcony, terrace, walk_in_closet, double_height_ceiling, central_ac, water_filtration, backup_generator, intercom"],
+  "customFeatures": ["any features mentioned that don't match the list above"],
+  "structuralType": "rcc" | "steel" | "loadbearing",
+  "timelineWeeks": number or null,
+  "confidence": 0.0 to 1.0 (how confident you are in the parsing)
+}
+
+Rules:
+- If something is not mentioned, use sensible defaults for Pakistan
+- Convert Urdu numbers to digits (e.g. "تین" = 3, "پانچ" = 5)
+- Convert budget mentions like "50 lakh" = 5000000, "1 crore" = 10000000, "20 lac" = 2000000
+- "marla", "مرلہ", "kanal", "کنال" are plot units
+- Understand Roman Urdu: "ghar" = house, "dukan" = shop, "plaza" = commercial, "kamray" = rooms, "manzil" = floor
+- Return ONLY the JSON, no markdown fences`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.5-flash',
+      contents: prompt,
+    });
+    const responseText = response.text.trim();
+    const cleaned = responseText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    return { success: true, data: JSON.parse(cleaned) };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+module.exports = { analyzeProjectWithAI, aiMatchEngineers, askConstructionAI, generateFloorPlan, amendFloorPlan, analyzeProjectRisks, generateMaterialBreakdown, generateProjectTimeline, parseVoiceToProject };

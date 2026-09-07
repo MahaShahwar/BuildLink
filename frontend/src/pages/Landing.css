@@ -682,3 +682,179 @@
     display: none;
   }
 }
+
+/* ===== VOICE AI SHOWCASE ===== */
+.voice-showcase {
+  padding: 100px 24px;
+  background: linear-gradient(180deg, var(--slate-950) 0%, #0c1929 50%, var(--slate-950) 100%);
+  position: relative;
+  overflow: hidden;
+}
+.voice-showcase::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, rgba(6,182,212,0.06) 40%, transparent 70%);
+  pointer-events: none;
+}
+.voice-showcase__container {
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+.voice-showcase__demo {
+  margin-top: 40px;
+}
+.voice-showcase__demo-card {
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid rgba(59,130,246,0.15);
+  border-radius: 20px;
+  padding: 32px 28px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 0 60px rgba(59,130,246,0.06);
+}
+.voice-showcase__langs {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+.voice-showcase__lang {
+  padding: 8px 24px;
+  border-radius: 30px;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.6);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.voice-showcase__lang.active {
+  background: rgba(59,130,246,0.25);
+  border-color: #3b82f6;
+  color: #fff;
+}
+.voice-showcase__mic-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.voice-showcase__mic {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 3px solid rgba(59,130,246,0.5);
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  box-shadow: 0 0 30px rgba(59,130,246,0.3);
+}
+.voice-showcase__mic:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 50px rgba(59,130,246,0.5);
+}
+.voice-showcase__mic.listening {
+  animation: micPulse 1.5s ease-in-out infinite;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border-color: rgba(239,68,68,0.5);
+  box-shadow: 0 0 40px rgba(239,68,68,0.4);
+}
+@keyframes micPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 30px rgba(239,68,68,0.4); }
+  50% { transform: scale(1.1); box-shadow: 0 0 60px rgba(239,68,68,0.6); }
+}
+.voice-showcase__mic-label {
+  color: rgba(255,255,255,0.6);
+  font-size: 14px;
+}
+.voice-showcase__transcript {
+  background: rgba(255,255,255,0.05);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  text-align: left;
+}
+.voice-showcase__transcript-label {
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 6px;
+}
+.voice-showcase__transcript-text {
+  color: #fff;
+  font-size: 16px;
+  font-style: italic;
+  margin: 0;
+  line-height: 1.6;
+}
+.voice-showcase__result {
+  background: rgba(16,185,129,0.08);
+  border: 1.5px solid rgba(16,185,129,0.25);
+  border-radius: 14px;
+  padding: 18px;
+  text-align: left;
+}
+.voice-showcase__result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  color: #10b981;
+  font-weight: 700;
+  font-size: 14px;
+}
+.voice-showcase__result-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+}
+.voice-showcase__result-grid div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255,255,255,0.85);
+  font-size: 14px;
+}
+.voice-showcase__result-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.voice-showcase__result-features .tag {
+  background: rgba(59,130,246,0.15);
+  border: 1px solid rgba(59,130,246,0.3);
+  color: #93c5fd;
+}
+.voice-showcase__examples {
+  text-align: center;
+}
+.voice-showcase__examples p {
+  color: rgba(255,255,255,0.4);
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.voice-showcase__example-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.voice-showcase__example-list span {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 10px 16px;
+  color: rgba(255,255,255,0.5);
+  font-size: 14px;
+  font-style: italic;
+}
