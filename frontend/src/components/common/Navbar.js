@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './Navbar.css';
@@ -8,9 +8,17 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   const isLanding = location.pathname === '/';
   const isLoggedIn = !!user;
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -19,7 +27,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className={`navbar ${isLanding && !isLoggedIn ? 'navbar--transparent' : 'navbar--solid'}`}>
+    <nav className={`navbar ${isLanding && !isLoggedIn && !scrolled ? 'navbar--transparent' : 'navbar--solid'}`}>
       <div className="navbar__container">
         <Link to="/" className="navbar__logo">
           <div className="navbar__logo-icon">
@@ -69,12 +77,20 @@ const Navbar = () => {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                 Find Engineers
               </Link>
-              <Link to="/design" className={`navbar__link ${location.pathname === '/design' ? 'navbar__link--active' : ''}`} onClick={() => setMenuOpen(false)}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-                Floor Plan
-              </Link>
               <div className="navbar__user">
                 <div className="navbar__user-avatar">{user.firstName?.charAt(0)}</div>
+                <span className="navbar__user-name">{user.firstName}</span>
+                <button className="navbar__btn navbar__btn--outline" onClick={handleLogout}>Logout</button>
+              </div>
+            </>
+          ) : user.role === 'admin' ? (
+            <>
+              <Link to="/admin" className={`navbar__link ${location.pathname === '/admin' ? 'navbar__link--active' : ''}`} onClick={() => setMenuOpen(false)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                Admin Panel
+              </Link>
+              <div className="navbar__user">
+                <div className="navbar__user-avatar">🛡️</div>
                 <span className="navbar__user-name">{user.firstName}</span>
                 <button className="navbar__btn navbar__btn--outline" onClick={handleLogout}>Logout</button>
               </div>
@@ -92,6 +108,10 @@ const Navbar = () => {
               <Link to="/my-requests" className={`navbar__link ${location.pathname === '/my-requests' ? 'navbar__link--active' : ''}`} onClick={() => setMenuOpen(false)}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
                 My Requests
+              </Link>
+              <Link to="/design" className={`navbar__link ${location.pathname === '/design' ? 'navbar__link--active' : ''}`} onClick={() => setMenuOpen(false)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                Floor Plan
               </Link>
               <Link to="/engineer-profile" className={`navbar__link ${location.pathname === '/engineer-profile' ? 'navbar__link--active' : ''}`} onClick={() => setMenuOpen(false)}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
